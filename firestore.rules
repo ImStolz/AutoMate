@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función para verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Función para verificar si el usuario es el propietario del documento
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Función para verificar si el usuario es premium
+    function isPremiumUser() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionType != 'free';
+    }
+    
+    // Reglas para usuarios
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      
+      // Permitir creación de perfil durante el registro
+      allow create: if isAuthenticated() && isOwner(userId) &&
+                   request.resource.data.keys().hasAll(['id', 'email', 'displayName', 'createdAt']);
+    }
+    
+    // Reglas para vehículos
+    match /vehicles/{vehicleId} {
+      allow read, write: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) &&
+                   // Verificar límite de vehículos para usuarios gratuitos
+                   (isPremiumUser() || 
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.vehicleCount < 2);
+    }
+    
+    // Reglas para gastos
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      
+      // Índice por vehículo y fecha para consultas eficientes
+      allow list: if isAuthenticated() && 
+                 request.query.limit <= 50 &&
+                 resource.data.userId == request.auth.uid;
+    }
+    
+    // Reglas para mantenimientos
+    match /maintenance/{maintenanceId} {
+      allow read, write: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      
+      // Permitir consultas por vehículo y estado
+      allow list: if isAuthenticated() && 
+                 request.query.limit <= 100 &&
+                 resource.data.userId == request.auth.uid;
+    }
+    
+    // Reglas para configuraciones globales (solo lectura para usuarios autenticados)
+    match /config/{document} {
+      allow read: if isAuthenticated();
+    }
+    
+    // Reglas para estadísticas agregadas (solo lectura)
+    match /stats/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+    }
+  }
+}
