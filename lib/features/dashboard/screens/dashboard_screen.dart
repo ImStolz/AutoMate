@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/vehicles_provider.dart';
+import '../../../core/providers/expenses_provider.dart';
 import '../widgets/dashboard_card.dart';
 import '../widgets/expense_chart.dart';
 import '../widgets/recent_expenses_list.dart';
 import '../widgets/maintenance_reminders.dart';
+import '../widgets/currency_selector.dart';
+import '../../vehicles/widgets/vehicle_selector.dart';
 
 /// Pantalla principal del dashboard con resumen de gastos y estadísticas
 class DashboardScreen extends ConsumerWidget {
@@ -14,9 +19,11 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final theme = Theme.of(context);
+    final vehiclesState = ref.watch(vehiclesNotifierProvider);
+    final expensesState = ref.watch(expensesNotifierProvider);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,11 +43,13 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          const VehicleSelector(),
+          const SizedBox(width: 8),
+          const CurrencySelector(),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Implementar notificaciones
-            },
+            onPressed: () => _showNotifications(context),
           ),
         ],
       ),
@@ -59,7 +68,7 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: DashboardCard(
                       title: 'Vehículos',
-                      value: '2', // TODO: Obtener de provider
+                      value: '${vehiclesState.vehicles.length}',
                       subtitle: 'Registrados',
                       icon: Icons.directions_car,
                       color: theme.colorScheme.primary,
@@ -69,7 +78,7 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: DashboardCard(
                       title: 'Este mes',
-                      value: '€245.50', // TODO: Obtener de provider
+                      value: _getCurrentMonthTotal(expensesState),
                       subtitle: 'Gastos totales',
                       icon: Icons.euro,
                       color: Colors.green,
@@ -85,7 +94,7 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: DashboardCard(
                       title: 'Promedio',
-                      value: '6.8 L/100km', // TODO: Obtener de provider
+                      value: _getAverageConsumption(expensesState),
                       subtitle: 'Consumo',
                       icon: Icons.local_gas_station,
                       color: Colors.orange,
@@ -95,7 +104,7 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: DashboardCard(
                       title: 'Próximo',
-                      value: '2,500 km', // TODO: Obtener de provider
+                      value: _getNextMaintenance(vehiclesState),
                       subtitle: 'Mantenimiento',
                       icon: Icons.build,
                       color: Colors.red,
@@ -187,7 +196,7 @@ class DashboardScreen extends ConsumerWidget {
               title: const Text('Registrar combustible'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navegar a registro de combustible
+                context.push('/expenses');
               },
             ),
             ListTile(
@@ -195,7 +204,7 @@ class DashboardScreen extends ConsumerWidget {
               title: const Text('Agregar gasto'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navegar a registro de gasto
+                context.push('/expenses');
               },
             ),
             ListTile(
@@ -203,7 +212,7 @@ class DashboardScreen extends ConsumerWidget {
               title: const Text('Registrar mantenimiento'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navegar a registro de mantenimiento
+                context.push('/maintenance');
               },
             ),
             ListTile(
@@ -211,12 +220,130 @@ class DashboardScreen extends ConsumerWidget {
               title: const Text('Agregar vehículo'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navegar a registro de vehículo
+                context.push('/vehicles');
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _showNotifications(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.notifications),
+                const SizedBox(width: 8),
+                Text(
+                  'Notificaciones',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildNotificationItem(
+              context,
+              Icons.build,
+              'Mantenimiento Próximo',
+              'Cambio de aceite en 500 km',
+              Colors.orange,
+            ),
+            _buildNotificationItem(
+              context,
+              Icons.local_gas_station,
+              'Recordatorio de Combustible',
+              'Registra tu última carga',
+              Colors.blue,
+            ),
+            _buildNotificationItem(
+              context,
+              Icons.star,
+              'Función Premium',
+              'Desbloquea recordatorios automáticos',
+              Colors.purple,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+  ) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color.withOpacity(0.1),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      onTap: () {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Abriendo: $title')),
+        );
+      },
+    );
+  }
+
+  /// Obtiene el total de gastos del mes actual
+  String _getCurrentMonthTotal(ExpensesState expensesState) {
+    if (expensesState.expenses.isEmpty) return '€0.00';
+    
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+    final nextMonth = DateTime(now.year, now.month + 1);
+    
+    final monthlyExpenses = expensesState.expenses.where((expense) =>
+        expense.date.isAfter(currentMonth.subtract(const Duration(days: 1))) &&
+        expense.date.isBefore(nextMonth));
+    
+    final total = monthlyExpenses.fold<double>(0, (sum, expense) => sum + expense.amount);
+    return '€${total.toStringAsFixed(2)}';
+  }
+
+  /// Obtiene el promedio de consumo
+  String _getAverageConsumption(ExpensesState expensesState) {
+    if (expensesState.expenses.isEmpty) return '0.0 L/100km';
+    
+    final fuelExpenses = expensesState.expenses.where((expense) => 
+        expense.category.name == 'fuel' && expense.quantity != null);
+    
+    if (fuelExpenses.isEmpty) return '0.0 L/100km';
+    
+    final totalLiters = fuelExpenses.fold<double>(0, (sum, expense) => sum + (expense.quantity ?? 0));
+    final avgConsumption = totalLiters / fuelExpenses.length;
+    return '${avgConsumption.toStringAsFixed(1)} L/100km';
+  }
+
+  /// Obtiene el próximo mantenimiento
+  String _getNextMaintenance(VehiclesState vehiclesState) {
+    if (vehiclesState.vehicles.isEmpty) return 'Sin datos';
+    
+    // Simulación simple - en producción esto vendría de datos reales
+    final vehicle = vehiclesState.vehicles.first;
+    final nextService = vehicle.currentOdometer + 5000;
+    return '${nextService.toStringAsFixed(0)} km';
   }
 }

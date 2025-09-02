@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/services/firebase_service.dart';
+import 'core/services/preferences_service.dart';
+import 'core/services/ads_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/auth_provider.dart';
+import 'core/providers/language_provider.dart';
 
 /// Punto de entrada principal de la aplicación AutoMate
 void main() async {
   // Asegurar que Flutter esté inicializado
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar Firebase con manejo de errores
+  // Inicializar servicios principales
   try {
+    await PreferencesService.init();
     await FirebaseService.initialize();
+    await AdsService.initialize();
   } catch (e) {
-    print('Firebase initialization error (continuing without Firebase): $e');
+    debugPrint('Services initialization error (continuing with limited functionality): $e');
   }
   
   // Ejecutar la aplicación con Riverpod
@@ -34,6 +39,7 @@ class AutoMateApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final authState = ref.watch(authNotifierProvider);
+    final currentLocale = ref.watch(languageNotifierProvider);
     
     return MaterialApp.router(
       // Configuración básica
@@ -59,7 +65,7 @@ class AutoMateApp extends ConsumerWidget {
         Locale('es', 'CL'), // Español Chile
         Locale('en', 'US'), // Inglés (fallback)
       ],
-      locale: _getLocale(authState.userModel?.settings.language),
+      locale: currentLocale,
       
       // Builder para manejar errores globales
       builder: (context, child) {
@@ -79,26 +85,13 @@ class AutoMateApp extends ConsumerWidget {
     return isDarkMode ? ThemeMode.dark : ThemeMode.light;
   }
 
-  /// Determina el locale basado en la configuración del usuario
-  Locale _getLocale(String? language) {
-    switch (language) {
-      case 'es-ES':
-        return const Locale('es', 'ES');
-      case 'es-CL':
-        return const Locale('es', 'CL');
-      case 'en':
-        return const Locale('en', 'US');
-      default:
-        return const Locale('es', 'ES'); // Español España por defecto
-    }
-  }
 
   /// Construye un widget de error personalizado
   Widget _buildErrorWidget(BuildContext context, FlutterErrorDetails errorDetails) {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -108,7 +101,12 @@ class AutoMateApp extends ConsumerWidget {
               Icon(
                 Icons.error_outline,
                 size: 64,
-                color: theme.colorScheme.error,
+                color: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6750A4),
+          brightness: Brightness.light,
+        ).copyWith(
+          surface: const Color(0xFFFFFBFE),
+        ).error,
               ),
               const SizedBox(height: 16),
               Text(
@@ -129,7 +127,12 @@ class AutoMateApp extends ConsumerWidget {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implementar reinicio de la aplicación
+                  // Reiniciar la aplicación
+                  runApp(
+                    const ProviderScope(
+                      child: AutoMateApp(),
+                    ),
+                  );
                 },
                 child: const Text('Reintentar'),
               ),

@@ -51,6 +51,28 @@ dependencies:
   
   # Permissions
   permission_handler: ^11.1.0
+  
+  # Ads & Monetization
+  google_mobile_ads: ^5.1.0
+  
+  # In-App Purchases & Subscriptions
+  in_app_purchase: ^3.1.13
+  
+  # Onboarding & Tutorial
+  introduction_screen: ^3.1.12
+  showcaseview: ^3.0.0
+  
+  # Connectivity & Network
+  connectivity_plus: ^6.0.5
+  
+  # Package Info
+  package_info_plus: ^8.0.2
+  
+  # URL Launcher (for terms & privacy)
+  url_launcher: ^6.3.0
+  
+  # Device Info
+  device_info_plus: ^10.1.2
 
 dev_dependencies:
   flutter_test:

@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
-import '../screens/vehicles_screen.dart';
+import '../../../core/models/vehicle_model.dart';
 
 /// Widget de tarjeta para mostrar información de un vehículo
 class VehicleCard extends StatelessWidget {
-  final VehicleItem vehicle;
+  final VehicleModel vehicle;
+  final bool isSelected;
   final VoidCallback? onTap;
+  final VoidCallback? onSelect;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const VehicleCard({
     super.key,
     required this.vehicle,
+    this.isSelected = false,
     this.onTap,
+    this.onSelect,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -17,7 +25,8 @@ class VehicleCard extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Card(
-      elevation: 2,
+      elevation: isSelected ? 4 : 2,
+      color: isSelected ? theme.colorScheme.primaryContainer.withValues(alpha: 0.1) : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -34,9 +43,10 @@ class VehicleCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          vehicle.name,
+                          vehicle.fullName,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w600,
+                            color: isSelected ? theme.colorScheme.primary : null,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -48,24 +58,30 @@ class VehicleCard extends StatelessWidget {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                vehicle.licensePlate,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w500,
+                            if (vehicle.licensePlate != null) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected 
+                                      ? theme.colorScheme.primary 
+                                      : theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  vehicle.licensePlate!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: isSelected 
+                                        ? theme.colorScheme.onPrimary
+                                        : theme.colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ],
@@ -76,8 +92,12 @@ class VehicleCard extends StatelessWidget {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
+                      border: isSelected ? Border.all(
+                        color: theme.colorScheme.primary,
+                        width: 2,
+                      ) : null,
                     ),
                     child: vehicle.imageUrl != null
                         ? ClipRRect(
@@ -88,8 +108,10 @@ class VehicleCard extends StatelessWidget {
                             ),
                           )
                         : Icon(
-                            Icons.directions_car,
-                            color: theme.colorScheme.onSurfaceVariant,
+                            _getVehicleIcon(vehicle.vehicleType),
+                            color: isSelected 
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
                             size: 32,
                           ),
                   ),
@@ -112,9 +134,9 @@ class VehicleCard extends StatelessWidget {
                   Expanded(
                     child: _buildMetric(
                       context,
-                      icon: Icons.local_gas_station,
-                      label: 'Consumo',
-                      value: '${vehicle.averageConsumption} L/100km',
+                      icon: _getFuelIcon(vehicle.fuelType),
+                      label: 'Combustible',
+                      value: _getFuelLabel(vehicle.fuelType),
                     ),
                   ),
                 ],
@@ -127,60 +149,56 @@ class VehicleCard extends StatelessWidget {
                   Expanded(
                     child: _buildMetric(
                       context,
-                      icon: Icons.euro,
-                      label: 'Este mes',
-                      value: '€${vehicle.totalExpensesThisMonth.toStringAsFixed(2)}',
+                      icon: Icons.route,
+                      label: 'Recorrido',
+                      value: '${_formatNumber(vehicle.totalKilometers)} km',
                     ),
                   ),
-                  Expanded(
-                    child: _buildMetric(
-                      context,
-                      icon: Icons.schedule,
-                      label: 'Último gasto',
-                      value: vehicle.lastExpenseDate,
+                  if (vehicle.averageConsumption != null)
+                    Expanded(
+                      child: _buildMetric(
+                        context,
+                        icon: Icons.analytics,
+                        label: 'Consumo',
+                        value: vehicle.isElectric 
+                            ? '${vehicle.averageConsumption!.toStringAsFixed(1)} kWh/100km'
+                            : '${vehicle.averageConsumption!.toStringAsFixed(1)} L/100km',
+                      ),
                     ),
-                  ),
                 ],
               ),
               
               const SizedBox(height: 16),
               
-              // Próximo mantenimiento
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondaryContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.build,
-                      size: 16,
-                      color: theme.colorScheme.onSecondaryContainer,
+              // Botones de acción
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (onSelect != null)
+                    TextButton.icon(
+                      onPressed: onSelect,
+                      icon: Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        size: 16,
+                      ),
+                      label: Text(isSelected ? 'Seleccionado' : 'Seleccionar'),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Próximo: ${vehicle.nextMaintenanceType}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  if (onEdit != null)
+                    TextButton.icon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Editar'),
+                    ),
+                  if (onDelete != null)
+                    TextButton.icon(
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete, size: 16),
+                      label: const Text('Eliminar'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
                       ),
                     ),
-                    Text(
-                      '${_formatNumber(vehicle.nextMaintenanceKm)} km',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ],
           ),
@@ -235,5 +253,63 @@ class VehicleCard extends StatelessWidget {
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},',
     );
+  }
+
+  /// Obtiene el icono según el tipo de vehículo
+  IconData _getVehicleIcon(VehicleType type) {
+    switch (type) {
+      case VehicleType.car:
+        return Icons.directions_car;
+      case VehicleType.motorcycle:
+        return Icons.two_wheeler;
+      case VehicleType.truck:
+        return Icons.local_shipping;
+      case VehicleType.van:
+        return Icons.airport_shuttle;
+      case VehicleType.suv:
+        return Icons.directions_car;
+      case VehicleType.other:
+        return Icons.directions_car;
+    }
+  }
+
+  /// Obtiene el icono según el tipo de combustible
+  IconData _getFuelIcon(FuelType type) {
+    switch (type) {
+      case FuelType.gasoline:
+        return Icons.local_gas_station;
+      case FuelType.diesel:
+        return Icons.local_gas_station;
+      case FuelType.electric:
+        return Icons.electric_bolt;
+      case FuelType.hybrid:
+        return Icons.electric_car;
+      case FuelType.lpg:
+        return Icons.propane_tank;
+      case FuelType.cng:
+        return Icons.propane_tank;
+      case FuelType.other:
+        return Icons.local_gas_station;
+    }
+  }
+
+  /// Obtiene la etiqueta según el tipo de combustible
+  String _getFuelLabel(FuelType type) {
+    switch (type) {
+      case FuelType.gasoline:
+        return 'Gasolina';
+      case FuelType.diesel:
+        return 'Diésel';
+      case FuelType.electric:
+        return 'Eléctrico';
+      case FuelType.hybrid:
+        return 'Híbrido';
+      case FuelType.lpg:
+        return 'GLP';
+      case FuelType.cng:
+        return 'GNC';
+      case FuelType.other:
+        return 'Otro';
+    }
   }
 }

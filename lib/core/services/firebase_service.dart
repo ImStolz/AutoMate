@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_storage/firebase_storage.dart';  // Temporarily disabled for web
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../firebase_options.dart';
+import '../models/vehicle_model.dart';
 
 /// Servicio principal de Firebase que maneja la configuración
 /// y proporciona acceso a los servicios de Firebase
@@ -203,6 +204,25 @@ class FirebaseService {
   /// Obtiene una referencia a la colección de mantenimientos
   CollectionReference get maintenanceCollection => 
       firestore.collection('maintenance');
+
+  /// Obtiene los vehículos de un usuario
+  Future<List<VehicleModel>> getVehicles(String userId) async {
+    try {
+      final querySnapshot = await vehiclesCollection
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: false)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => VehicleModel.fromJson({
+                'id': doc.id,
+                ...doc.data() as Map<String, dynamic>,
+              }))
+          .toList();
+    } catch (e) {
+      throw Exception('Error loading vehicles: $e');
+    }
+  }
 
   // Métodos de Firebase Storage temporalmente deshabilitados para compatibilidad web
   /*

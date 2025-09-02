@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "795634060623-snanjlsuvbrnf48gake5idvrhl6kl1qu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.stolzofficial.automate",
+            "certificate_hash": "8694a073189c1385f871b52baa0ae090464af497"
+          }
+        },
+        {
           "client_id": "795634060623-eec23uae1jio8eouab9a5bncokktf6l3.apps.googleusercontent.com",
           "client_type": 3
         }

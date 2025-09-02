@@ -1,15 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/expenses_provider.dart';
 
 /// Widget que muestra una lista de los gastos más recientes
-class RecentExpensesList extends StatelessWidget {
+class RecentExpensesList extends ConsumerWidget {
   const RecentExpensesList({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final expensesState = ref.watch(expensesNotifierProvider);
     
-    // TODO: Reemplazar con datos reales del provider
-    final recentExpenses = _getSampleExpenses();
+    // Si no hay gastos, mostrar mensaje vacío
+    if (expensesState.expenses.isEmpty) {
+      return Card(
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.receipt_long,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Sin gastos recientes',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Los gastos aparecerán aquí',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // Obtener los últimos 4 gastos
+    final recentExpenses = expensesState.expenses.take(4).toList();
     
     return Card(
       child: ListView.separated(
@@ -29,12 +66,12 @@ class RecentExpensesList extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: expense.categoryColor.withOpacity(0.1),
+                    color: _getCategoryColor(expense.category).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    expense.categoryIcon,
-                    color: expense.categoryColor,
+                    _getCategoryIcon(expense.category),
+                    color: _getCategoryColor(expense.category),
                     size: 20,
                   ),
                 ),
@@ -55,13 +92,13 @@ class RecentExpensesList extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            expense.vehicleName,
+                            expense.vehicleId, // TODO: Obtener nombre real del vehículo
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
-                            ' • ${expense.date}',
+                            ' • ${_formatDate(expense.date)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -74,7 +111,7 @@ class RecentExpensesList extends StatelessWidget {
                 
                 // Monto
                 Text(
-                  expense.amount,
+                  '€${expense.amount.toStringAsFixed(2)}',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
@@ -88,60 +125,67 @@ class RecentExpensesList extends StatelessWidget {
     );
   }
 
-  /// Obtiene datos de ejemplo para los gastos recientes
-  List<RecentExpenseItem> _getSampleExpenses() {
-    return [
-      RecentExpenseItem(
-        description: 'Combustible Shell',
-        vehicleName: 'Toyota Corolla',
-        date: 'Hoy',
-        amount: '€45.20',
-        categoryIcon: Icons.local_gas_station,
-        categoryColor: Colors.blue,
-      ),
-      RecentExpenseItem(
-        description: 'Cambio de aceite',
-        vehicleName: 'BMW X3',
-        date: 'Ayer',
-        amount: '€85.00',
-        categoryIcon: Icons.build,
-        categoryColor: Colors.orange,
-      ),
-      RecentExpenseItem(
-        description: 'Seguro mensual',
-        vehicleName: 'Toyota Corolla',
-        date: '2 días',
-        amount: '€120.00',
-        categoryIcon: Icons.security,
-        categoryColor: Colors.green,
-      ),
-      RecentExpenseItem(
-        description: 'Combustible Repsol',
-        vehicleName: 'BMW X3',
-        date: '3 días',
-        amount: '€52.80',
-        categoryIcon: Icons.local_gas_station,
-        categoryColor: Colors.blue,
-      ),
-    ];
+  /// Obtiene el color de la categoría basado en el nombre
+  Color _getCategoryColor(dynamic category) {
+    final categoryName = category?.name?.toLowerCase() ?? '';
+    switch (categoryName) {
+      case 'fuel':
+      case 'combustible':
+        return Colors.blue;
+      case 'maintenance':
+      case 'mantenimiento':
+        return Colors.orange;
+      case 'insurance':
+      case 'seguro':
+        return Colors.green;
+      case 'parking':
+      case 'estacionamiento':
+        return Colors.purple;
+      case 'tolls':
+      case 'peajes':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
-}
 
-/// Clase para representar un elemento de gasto reciente
-class RecentExpenseItem {
-  final String description;
-  final String vehicleName;
-  final String date;
-  final String amount;
-  final IconData categoryIcon;
-  final Color categoryColor;
+  /// Obtiene el icono de la categoría basado en el nombre
+  IconData _getCategoryIcon(dynamic category) {
+    final categoryName = category?.name?.toLowerCase() ?? '';
+    switch (categoryName) {
+      case 'fuel':
+      case 'combustible':
+        return Icons.local_gas_station;
+      case 'maintenance':
+      case 'mantenimiento':
+        return Icons.build;
+      case 'insurance':
+      case 'seguro':
+        return Icons.security;
+      case 'parking':
+      case 'estacionamiento':
+        return Icons.local_parking;
+      case 'tolls':
+      case 'peajes':
+        return Icons.toll;
+      default:
+        return Icons.receipt;
+    }
+  }
 
-  const RecentExpenseItem({
-    required this.description,
-    required this.vehicleName,
-    required this.date,
-    required this.amount,
-    required this.categoryIcon,
-    required this.categoryColor,
-  });
+  /// Formatea la fecha para mostrar de forma amigable
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date).inDays;
+    
+    if (difference == 0) {
+      return 'Hoy';
+    } else if (difference == 1) {
+      return 'Ayer';
+    } else if (difference < 7) {
+      return '$difference días';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
 }

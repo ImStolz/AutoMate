@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
@@ -9,32 +8,63 @@ import '../../features/vehicles/screens/vehicles_screen.dart';
 import '../../features/expenses/screens/expenses_screen.dart';
 import '../../features/maintenance/screens/maintenance_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/onboarding/screens/onboarding_screen.dart';
+import '../../features/premium/screens/premium_screen.dart';
+import '../../features/legal/screens/terms_of_service_screen.dart';
+import '../../features/legal/screens/privacy_policy_screen.dart';
+import '../../features/fuel/screens/add_fuel_screen.dart';
+import '../providers/auth_provider.dart';
+import '../services/preferences_service.dart';
+import '../widgets/main_navigation_wrapper.dart';
+
+/// Determina la ubicación inicial basada en el estado de autenticación
+String _getInitialLocation(bool isAuthenticated) {
+  if (!isAuthenticated) {
+    if (PreferencesService.isFirstLaunch() && !PreferencesService.getOnboardingCompleted()) {
+      return '/onboarding';
+    }
+    return '/login';
+  }
+  return '/dashboard';
+}
 
 /// Configuración del router de la aplicación
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
   
   return GoRouter(
-    initialLocation: authState.isAuthenticated ? '/dashboard' : '/login',
+    initialLocation: _getInitialLocation(authState.isAuthenticated),
     redirect: (context, state) {
       final isAuthenticated = authState.isAuthenticated;
-      final isAuthRoute = state.uri.toString().startsWith('/login') || 
-                         state.uri.toString().startsWith('/register') ||
-                         state.uri.toString().startsWith('/forgot-password');
+      final currentPath = state.uri.toString();
+      final isAuthRoute = currentPath.startsWith('/login') || 
+                         currentPath.startsWith('/register') ||
+                         currentPath.startsWith('/forgot-password');
+      final isOnboardingRoute = currentPath.startsWith('/onboarding');
       
-      // Si no está autenticado y no está en una ruta de auth, redirigir a login
-      if (!isAuthenticated && !isAuthRoute) {
+      // Verificar si es primera vez y no está autenticado
+      if (!isAuthenticated && !isAuthRoute && !isOnboardingRoute) {
+        if (PreferencesService.isFirstLaunch() && !PreferencesService.getOnboardingCompleted()) {
+          return '/onboarding';
+        }
         return '/login';
       }
       
-      // Si está autenticado y está en una ruta de auth, redirigir a dashboard
-      if (isAuthenticated && isAuthRoute) {
+      // Si está autenticado y está en una ruta de auth o onboarding, redirigir a dashboard
+      if (isAuthenticated && (isAuthRoute || isOnboardingRoute)) {
         return '/dashboard';
       }
       
       return null;
     },
     routes: [
+      // Ruta de onboarding
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      
       // Rutas de autenticación
       GoRoute(
         path: '/login',
@@ -77,6 +107,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ProfileScreen(),
           ),
         ],
+      ),
+      
+      // Rutas adicionales
+      GoRoute(
+        path: '/premium',
+        name: 'premium',
+        builder: (context, state) => const PremiumScreen(),
+      ),
+      GoRoute(
+        path: '/terms',
+        name: 'terms',
+        builder: (context, state) => const TermsOfServiceScreen(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        name: 'privacy',
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      GoRoute(
+        path: '/add-fuel',
+        name: 'add-fuel',
+        builder: (context, state) => const AddFuelScreen(),
       ),
     ],
   );

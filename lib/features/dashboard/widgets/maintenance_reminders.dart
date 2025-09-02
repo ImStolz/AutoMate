@@ -131,21 +131,21 @@ class MaintenanceReminders extends StatelessWidget {
   /// Obtiene datos de ejemplo para los recordatorios
   List<MaintenanceReminderItem> _getSampleReminders() {
     return [
-      MaintenanceReminderItem(
+      const MaintenanceReminderItem(
         title: 'Cambio de aceite',
         vehicleName: 'Toyota Corolla',
         dueInfo: 'Vence en 500 km',
         icon: Icons.oil_barrel,
         urgencyColor: Colors.orange,
       ),
-      MaintenanceReminderItem(
+      const MaintenanceReminderItem(
         title: 'Revisión técnica',
         vehicleName: 'BMW X3',
         dueInfo: 'Vence en 15 días',
         icon: Icons.assignment,
         urgencyColor: Colors.red,
       ),
-      MaintenanceReminderItem(
+      const MaintenanceReminderItem(
         title: 'Rotación de neumáticos',
         vehicleName: 'Toyota Corolla',
         dueInfo: 'Vence en 2,000 km',

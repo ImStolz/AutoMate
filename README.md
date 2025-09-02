@@ -1,6 +1,6 @@
-# AutoMate 🚗
+# AutoMate - Gestor de Gastos y Mantenimiento de Vehículos
 
-**AutoMate** es una aplicación móvil profesional multiplataforma (Android e iOS) desarrollada con **Flutter y Firebase** para la gestión inteligente de vehículos, gastos automotrices y mantenimientos.
+AutoMate es una aplicación móvil completa para gestionar gastos y mantenimiento de vehículos, desarrollada con Flutter y Firebase.
 
 ## 🎯 Características Principales
 
