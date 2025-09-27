@@ -22,6 +22,12 @@ class FirebaseService {
   /// Instancia de Firestore
   FirebaseFirestore get firestore => FirebaseFirestore.instance;
   
+  /// Referencia a la colección de vehículos
+  CollectionReference get vehiclesCollection => firestore.collection('vehicles');
+  
+  /// Referencia a la colección de mantenimientos
+  CollectionReference get maintenanceCollection => firestore.collection('maintenance');
+  
   // Firebase Storage temporalmente deshabilitado para compatibilidad web
   // FirebaseStorage? get storage => kIsWeb ? null : FirebaseStorage.instance;
   
@@ -193,32 +199,29 @@ class FirebaseService {
   CollectionReference get usersCollection => 
       firestore.collection('users');
 
-  /// Obtiene una referencia a la colección de vehículos
-  CollectionReference get vehiclesCollection => 
-      firestore.collection('vehicles');
-
   /// Obtiene una referencia a la colección de gastos
   CollectionReference get expensesCollection => 
       firestore.collection('expenses');
-
-  /// Obtiene una referencia a la colección de mantenimientos
-  CollectionReference get maintenanceCollection => 
-      firestore.collection('maintenance');
 
   /// Obtiene los vehículos de un usuario
   Future<List<VehicleModel>> getVehicles(String userId) async {
     try {
       final querySnapshot = await vehiclesCollection
           .where('userId', isEqualTo: userId)
-          .orderBy('createdAt', descending: false)
+          .where('isActive', isEqualTo: true)
           .get();
 
-      return querySnapshot.docs
+      final vehicles = querySnapshot.docs
           .map((doc) => VehicleModel.fromJson({
                 'id': doc.id,
                 ...doc.data() as Map<String, dynamic>,
               }))
           .toList();
+      
+      // Ordenar en el cliente para evitar problemas de índices
+      vehicles.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      
+      return vehicles;
     } catch (e) {
       throw Exception('Error loading vehicles: $e');
     }

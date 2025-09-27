@@ -13,31 +13,34 @@ class MaintenanceReminders extends StatelessWidget {
     
     if (reminders.isEmpty) {
       return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 48,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Todo al día',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(32),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 48,
+                  color: theme.colorScheme.primary,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'No tienes mantenimientos pendientes',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 16),
+                Text(
+                  'Todo al día',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'No tienes mantenimientos pendientes',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -128,31 +131,11 @@ class MaintenanceReminders extends StatelessWidget {
     );
   }
 
-  /// Obtiene datos de ejemplo para los recordatorios
+  /// Obtiene recordatorios reales del usuario
   List<MaintenanceReminderItem> _getSampleReminders() {
-    return [
-      const MaintenanceReminderItem(
-        title: 'Cambio de aceite',
-        vehicleName: 'Toyota Corolla',
-        dueInfo: 'Vence en 500 km',
-        icon: Icons.oil_barrel,
-        urgencyColor: Colors.orange,
-      ),
-      const MaintenanceReminderItem(
-        title: 'Revisión técnica',
-        vehicleName: 'BMW X3',
-        dueInfo: 'Vence en 15 días',
-        icon: Icons.assignment,
-        urgencyColor: Colors.red,
-      ),
-      const MaintenanceReminderItem(
-        title: 'Rotación de neumáticos',
-        vehicleName: 'Toyota Corolla',
-        dueInfo: 'Vence en 2,000 km',
-        icon: Icons.tire_repair,
-        urgencyColor: Colors.blue,
-      ),
-    ];
+    // TODO: Implementar conexión con provider de mantenimientos reales
+    // Por ahora retorna lista vacía para no mostrar datos de prueba
+    return [];
   }
 }
 

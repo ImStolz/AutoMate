@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/expenses_provider.dart';
+import '../../../core/providers/currency_provider.dart';
 
 /// Widget que muestra una lista de los gastos más recientes
 class RecentExpensesList extends ConsumerWidget {
@@ -10,6 +11,7 @@ class RecentExpensesList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final expensesState = ref.watch(expensesNotifierProvider);
+    final currencyNotifier = ref.watch(currencyNotifierProvider.notifier);
     
     // Si no hay gastos, mostrar mensaje vacío
     if (expensesState.expenses.isEmpty) {
@@ -111,7 +113,7 @@ class RecentExpensesList extends ConsumerWidget {
                 
                 // Monto
                 Text(
-                  '€${expense.amount.toStringAsFixed(2)}',
+                  currencyNotifier.formatAmount(expense.amount),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,

@@ -6,13 +6,14 @@ import '../../features/auth/screens/register_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/vehicles/screens/vehicles_screen.dart';
 import '../../features/expenses/screens/expenses_screen.dart';
-import '../../features/maintenance/screens/maintenance_screen.dart';
+import '../../features/maintenance/screens/maintenance_screen_clean.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/premium/screens/premium_screen.dart';
 import '../../features/legal/screens/terms_of_service_screen.dart';
 import '../../features/legal/screens/privacy_policy_screen.dart';
 import '../../features/fuel/screens/add_fuel_screen.dart';
+import '../../features/maintenance/screens/add_maintenance_screen.dart';
 import '../providers/auth_provider.dart';
 import '../services/preferences_service.dart';
 import '../widgets/main_navigation_wrapper.dart';
@@ -129,6 +130,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/add-fuel',
         name: 'add-fuel',
         builder: (context, state) => const AddFuelScreen(),
+      ),
+      GoRoute(
+        path: '/add-maintenance',
+        name: 'add-maintenance',
+        builder: (context, state) => const AddMaintenanceScreen(),
       ),
     ],
   );

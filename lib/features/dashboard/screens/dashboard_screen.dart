@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/vehicles_provider.dart';
 import '../../../core/providers/expenses_provider.dart';
+import '../../../core/providers/currency_provider.dart';
 import '../widgets/dashboard_card.dart';
 import '../widgets/expense_chart.dart';
 import '../widgets/recent_expenses_list.dart';
@@ -21,6 +22,8 @@ class DashboardScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final vehiclesState = ref.watch(vehiclesNotifierProvider);
     final expensesState = ref.watch(expensesNotifierProvider);
+    final currencyNotifier = ref.watch(currencyNotifierProvider.notifier);
+    final selectedCurrency = ref.watch(currencyNotifierProvider);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -78,9 +81,9 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: DashboardCard(
                       title: 'Este mes',
-                      value: _getCurrentMonthTotal(expensesState),
+                      value: _getCurrentMonthTotal(expensesState, currencyNotifier),
                       subtitle: 'Gastos totales',
-                      icon: Icons.euro,
+                      icon: _getCurrencyIcon(selectedCurrency.code),
                       color: Colors.green,
                     ),
                   ),
@@ -151,7 +154,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   TextButton(
                     onPressed: () {
-                      // TODO: Navegar a pantalla de gastos
+                      context.push('/expenses');
                     },
                     child: const Text('Ver todos'),
                   ),
@@ -249,26 +252,31 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _buildNotificationItem(
-              context,
-              Icons.build,
-              'Mantenimiento Próximo',
-              'Cambio de aceite en 500 km',
-              Colors.orange,
-            ),
-            _buildNotificationItem(
-              context,
-              Icons.local_gas_station,
-              'Recordatorio de Combustible',
-              'Registra tu última carga',
-              Colors.blue,
-            ),
-            _buildNotificationItem(
-              context,
-              Icons.star,
-              'Función Premium',
-              'Desbloquea recordatorios automáticos',
-              Colors.purple,
+            // TODO: Implementar notificaciones reales basadas en datos del usuario
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.notifications_none,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Sin notificaciones',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Las notificaciones aparecerán aquí',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -284,32 +292,10 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotificationItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-  ) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color.withOpacity(0.1),
-        child: Icon(icon, color: color),
-      ),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      onTap: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Abriendo: $title')),
-        );
-      },
-    );
-  }
 
   /// Obtiene el total de gastos del mes actual
-  String _getCurrentMonthTotal(ExpensesState expensesState) {
-    if (expensesState.expenses.isEmpty) return '€0.00';
+  String _getCurrentMonthTotal(ExpensesState expensesState, CurrencyNotifier currencyNotifier) {
+    if (expensesState.expenses.isEmpty) return currencyNotifier.formatAmount(0.0);
     
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month);
@@ -320,7 +306,7 @@ class DashboardScreen extends ConsumerWidget {
         expense.date.isBefore(nextMonth));
     
     final total = monthlyExpenses.fold<double>(0, (sum, expense) => sum + expense.amount);
-    return '€${total.toStringAsFixed(2)}';
+    return currencyNotifier.formatAmount(total);
   }
 
   /// Obtiene el promedio de consumo
@@ -345,5 +331,26 @@ class DashboardScreen extends ConsumerWidget {
     final vehicle = vehiclesState.vehicles.first;
     final nextService = vehicle.currentOdometer + 5000;
     return '${nextService.toStringAsFixed(0)} km';
+  }
+
+  /// Obtiene el icono apropiado para la moneda
+  IconData _getCurrencyIcon(String currencyCode) {
+    switch (currencyCode) {
+      case 'EUR':
+        return Icons.euro;
+      case 'USD':
+      case 'CLP':
+      case 'COP':
+      case 'MXN':
+      case 'ARS':
+      case 'CAD':
+        return Icons.attach_money;
+      case 'GBP':
+        return Icons.currency_pound;
+      case 'JPY':
+        return Icons.currency_yen;
+      default:
+        return Icons.attach_money;
+    }
   }
 }

@@ -76,10 +76,11 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
         totalAmount: totalAmount,
       );
     } catch (e) {
+      print('Error loading expenses: $e');
       state = state.copyWith(
         expenses: [],
         isLoading: false,
-        error: null,
+        error: 'Error cargando gastos. Verifica tu conexión y permisos.',
         categoryTotals: {},
         totalAmount: 0.0,
       );
@@ -145,9 +146,10 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
       await _firebaseService.expensesCollection.add(expenseData);
       await loadExpenses(vehicleId: expense.vehicleId);
     } catch (e) {
+      print('Error adding expense: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'Error adding expense: $e',
+        error: 'Error agregando gasto. Verifica tu conexión y permisos.',
       );
     }
   }
@@ -167,9 +169,10 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
       
       await loadExpenses(vehicleId: expense.vehicleId);
     } catch (e) {
+      print('Error updating expense: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'Error updating expense: $e',
+        error: 'Error actualizando gasto. Verifica tu conexión y permisos.',
       );
     }
   }
@@ -182,9 +185,10 @@ class ExpensesNotifier extends StateNotifier<ExpensesState> {
       await _firebaseService.expensesCollection.doc(expenseId).delete();
       await loadExpenses(vehicleId: vehicleId);
     } catch (e) {
+      print('Error deleting expense: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'Error deleting expense: $e',
+        error: 'Error eliminando gasto. Verifica tu conexión y permisos.',
       );
     }
   }
@@ -223,14 +227,9 @@ final expensesNotifierProvider = StateNotifierProvider.family<ExpensesNotifier, 
 final currentUserExpensesProvider = Provider<AsyncValue<ExpensesState>>((ref) {
   final authState = ref.watch(authNotifierProvider);
   
-  return authState.when(
-    data: (auth) {
-      if (auth.user == null) {
-        return AsyncValue.error('Usuario no autenticado', StackTrace.current);
-      }
-      return AsyncValue.data(ref.watch(expensesNotifierProvider(auth.user!.id)));
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (error, stack) => AsyncValue.error(error, stack),
-  );
+  if (authState.firebaseUser == null) {
+    return AsyncValue.error('Usuario no autenticado', StackTrace.current);
+  }
+  
+  return AsyncValue.data(ref.watch(expensesNotifierProvider(authState.firebaseUser!.uid)));
 });

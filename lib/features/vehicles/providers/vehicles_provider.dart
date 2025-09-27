@@ -52,10 +52,11 @@ class VehiclesNotifier extends StateNotifier<VehiclesState> {
         isLoading: false,
       );
     } catch (e) {
+      print('Error loading vehicles: $e');
       state = state.copyWith(
         vehicles: [],
         isLoading: false,
-        error: null,
+        error: 'Error cargando vehículos. Verifica tu conexión y permisos.',
       );
     }
   }
@@ -89,9 +90,10 @@ class VehiclesNotifier extends StateNotifier<VehiclesState> {
         isLoading: false,
       );
     } catch (e) {
+      print('Error adding vehicle: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'Error adding vehicle: $e',
+        error: 'Error agregando vehículo. Verifica tu conexión y permisos.',
       );
     }
   }
@@ -123,9 +125,10 @@ class VehiclesNotifier extends StateNotifier<VehiclesState> {
         isLoading: false,
       );
     } catch (e) {
+      print('Error updating vehicle: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'Error updating vehicle: $e',
+        error: 'Error actualizando vehículo. Verifica tu conexión y permisos.',
       );
     }
   }
@@ -151,9 +154,10 @@ class VehiclesNotifier extends StateNotifier<VehiclesState> {
         isLoading: false,
       );
     } catch (e) {
+      print('Error deleting vehicle: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'Error deleting vehicle: $e',
+        error: 'Error eliminando vehículo. Verifica tu conexión y permisos.',
       );
     }
   }
